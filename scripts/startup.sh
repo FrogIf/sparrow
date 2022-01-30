@@ -1,0 +1,1 @@
+nohup java -jar sparrow.jar --server.port=8080 >/dev/null 2>&1 &

@@ -1,0 +1,16 @@
+server:
+  port: 9093
+
+spring:
+  application:
+    name: Sparrow
+  datasource:
+    driver-class-name: org.sqlite.JDBC
+    url: jdbc:sqlite:sparrow.data
+    username:
+    password:
+  jpa:
+    database-platform: org.sqlite.hibernate.dialect.SQLiteDialect
+    hibernate:
+      ddl-auto: update
+    show-sql: false

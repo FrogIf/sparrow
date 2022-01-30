@@ -1,0 +1,1 @@
+org.springframework.boot.env.EnvironmentPostProcessor=sch.frog.sparrow.config.CustomConfigProcessor
