@@ -2,12 +2,14 @@ package sch.frog.sparrow.configuration;
 
 import io.micrometer.prometheus.PrometheusMeterRegistry;
 import io.prometheus.client.Counter;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import sch.frog.sparrow.prometheus.FrogMonitor;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
@@ -21,6 +23,9 @@ public class PrometheusConfiguration {
 
     @Resource
     private PrometheusMeterRegistry meterRegistry;
+
+    @Autowired
+    private FrogMonitor frogMonitor;
 
     /**
      * 统计访问量
@@ -43,6 +48,7 @@ public class PrometheusConfiguration {
                         String uri = request.getRequestURI();
                         String method = request.getMethod();
                         counter.labels(uri, method).inc();
+                        frogMonitor.accessIncrement();
                         return true;
                     }
                 });

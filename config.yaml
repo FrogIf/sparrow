@@ -1,0 +1,19 @@
+---
+# 处理请求前的延迟时间
+startDelaySeconds: 0
+ssl: false
+lowercaseOutputName: false
+lowercaseOutputLabelNames: false
+rules:
+  - pattern: 'sparrow<name=(\w+)><>(random):'
+    name: frog_$1
+    labels:
+      "application": "sparrow"
+    type: GAUGE
+    attrNameSnakeCase: true
+  - pattern: 'frog<name=(\w+)><>(\w+):'
+    name: frog_jmx_$2
+    labels:
+      "application": "sparrow"
+    type: COUNTER
+    attrNameSnakeCase: true
