@@ -21,6 +21,8 @@ management:
   server:
     port: 9291
   metrics:
+    tags:
+      application : ${spring.application.name}
     export:
       prometheus:
         enabled: true

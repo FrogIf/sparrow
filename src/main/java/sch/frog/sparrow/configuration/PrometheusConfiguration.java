@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.HandlerInterceptor;
@@ -15,12 +16,15 @@ import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import sch.frog.sparrow.prometheus.FrogMonitor;
+import sch.frog.sparrow.prometheus.PrometheusConstants;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 /**
  * Prometheus相关配置
+ *
+ * 这里面由于使用的不是io.micrometer.core.instrument.Counter之类的, 所以要手动指定application, 公共配置不生效
  */
 @Configuration
 public class PrometheusConfiguration {
@@ -33,25 +37,27 @@ public class PrometheusConfiguration {
     @Autowired
     private FrogMonitor frogMonitor;
 
+    @Value("${spring.application.name}") private String applicationName;
+
     /**
      * 统计访问量
      */
     @Bean
     public Counter requestTotalCountCollector(){
         return Counter.build().name("sparrow_http_request_count")
-                .labelNames("path", "method").help("http请求数").register(meterRegistry.getPrometheusRegistry());
+                .labelNames("path", "method", PrometheusConstants.APPLICATION_LABEL_KEY).help("http请求数").register(meterRegistry.getPrometheusRegistry());
     }
 
     @Bean
     public Histogram responseTimeCollector(){
         return Histogram.build().name("sparrow_response_duration")
-                .labelNames("method").help("响应时间").exponentialBuckets(1, 5, 6).register(meterRegistry.getPrometheusRegistry());
+                .labelNames("method", PrometheusConstants.APPLICATION_LABEL_KEY).help("响应时间").exponentialBuckets(1, 5, 6).register(meterRegistry.getPrometheusRegistry());
     }
 
     @Bean
     public Summary responseTimeSummaryCollector(){
         return Summary.build().name("sparrow_response_duration_quantiles")
-                .labelNames("method").help("响应时间分位")
+                .labelNames("method", PrometheusConstants.APPLICATION_LABEL_KEY).help("响应时间分位")
                 .quantile(0.5, 0.05)
                 .quantile(0.9, 0.01)
                 .quantile(0.99, 0.001)
@@ -65,7 +71,8 @@ public class PrometheusConfiguration {
         return new WebMvcConfigurer(){
             @Override
             public void addInterceptors(InterceptorRegistry registry){
-                registry.addInterceptor(new PrometheusMonitorInterceptor(counter, frogMonitor, responseTimeCollector, responseTimeSummaryCollector));
+                registry.addInterceptor(new PrometheusMonitorInterceptor(counter,
+                        frogMonitor, responseTimeCollector, responseTimeSummaryCollector, applicationName));
             }
         };
     }
@@ -82,18 +89,21 @@ public class PrometheusConfiguration {
 
         private final Summary responseTimeSummaryCollector;
 
-        public PrometheusMonitorInterceptor(Counter accessCounter, FrogMonitor frogMonitorMBean, Histogram responseHistogram, Summary responseTimeSummaryCollector) {
+        private final String applicationName;
+
+        public PrometheusMonitorInterceptor(Counter accessCounter, FrogMonitor frogMonitorMBean, Histogram responseHistogram, Summary responseTimeSummaryCollector, String applicationName) {
             this.accessCounter = accessCounter;
             this.frogMonitorMBean = frogMonitorMBean;
             this.responseHistogram = responseHistogram;
             this.responseTimeSummaryCollector = responseTimeSummaryCollector;
+            this.applicationName = applicationName;
         }
 
         @Override
         public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
             String uri = request.getRequestURI();
             String method = request.getMethod();
-            accessCounter.labels(uri, method).inc();
+            accessCounter.labels(uri, method, applicationName).inc();
             frogMonitorMBean.accessIncrement();
             requestStart.set(System.currentTimeMillis());
             return true;
@@ -107,8 +117,8 @@ public class PrometheusConfiguration {
                 if(start != null){
                     long duration = System.currentTimeMillis() - start;
                     logger.info("response duration : {}", duration);
-                    this.responseHistogram.labels(uri).observe(duration);
-                    this.responseTimeSummaryCollector.labels(uri).observe(duration);
+                    this.responseHistogram.labels(uri, applicationName).observe(duration);
+                    this.responseTimeSummaryCollector.labels(uri, applicationName).observe(duration);
                 }
             }finally {
                 requestStart.remove();
