@@ -1,5 +1,6 @@
 package sch.frog.sparrow.doodle;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 
 /**
@@ -62,38 +63,29 @@ public class CantorExpansion {
 
     // 生成一个序列的全排列
     public static void demoFullPermutation(){
-        char[] chars = { 'a', 'b', 'c', 'd' };
-        for(int i = 0; i < 24; i++){
-            int[] indices = invCantorExpansion(i, 4);
-            System.out.println(Arrays.toString(new char[]{
-                    chars[indices[0] - 1],
-                    chars[indices[1] - 1],
-                    chars[indices[2] - 1],
-                    chars[indices[3] - 1]
-            }) + " -- " + i);
+        int[] elements = new int[]{ 1, 2, 3, 4 };
+        boolean[] used = new boolean[elements.length];
+        ArrayList<int[]> resultContainer = new ArrayList<>();
+        dfsSearch(1, used, elements, new int[elements.length], resultContainer);
+        for (int[] arr : resultContainer) {
+            System.out.println(Arrays.toString(arr));
         }
-//        char[] chars = { 'a', 'b', 'c', 'd' };
-//        ArrayList<char[]> permutations = new ArrayList<>(24); // A(4, 4)
-//
-//        int[] path = { -1, -1, -1, -1 };
-//        int d = 0;
-//        outer: while(true){
-//            path[d] = path[d] + 1;
-//            d++;
-//            if(d == 4){
-//                permutations.add(new char[]{chars[path[0]], chars[path[1]], chars[path[2]], chars[path[3]]});
-//                d--;
-//                while(path[d] == 3){
-//                    path[d] = -1;
-//                    d--;
-//                    if(d == -1){ break outer; }
-//                }
-//            }
-//        }
-//
-//        for (char[] permutation : permutations) {
-//            System.out.println(permutation);
-//        }
+    }
+
+    private static void dfsSearch(int depth, boolean[] used, int[] optionalValue, int[] record, ArrayList<int[]> resultContainer){
+        if(depth > optionalValue.length){
+            resultContainer.add(Arrays.copyOf(record, record.length));
+        }else{
+            for(int i = 0; i < optionalValue.length; i++){
+                if(!used[i]){
+                    used[i] = true;
+                    record[depth - 1] = optionalValue[i];
+                    dfsSearch(depth + 1, used, optionalValue, record, resultContainer);
+                    used[i] = false;
+                }
+            }
+        }
+
     }
 
 }
