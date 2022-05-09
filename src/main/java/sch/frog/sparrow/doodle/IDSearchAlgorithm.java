@@ -5,11 +5,11 @@ import java.util.LinkedList;
 /**
  * 迭代加深搜索算法demo
  */
-public class IDAlgorithm {
+public class IDSearchAlgorithm {
 
     public static void main(String[] args){
-        int origin = 23;
-        int target = 160;
+        int origin = 0;
+        int target = 150;
         LinkedList<Integer> path = IDSearch(origin, target);
         if(path != null){
             System.out.print(origin);
@@ -23,7 +23,7 @@ public class IDAlgorithm {
     private final static int[] moves = { 1, 7, 8, 9 };
 
     /**
-     * 搜索经过moves中的动作, 总originalState状态到达targetState状态的最短路径
+     * 搜索经过moves中的动作, 从originalState状态到达targetState状态的最短路径
      * 或者说, targetState = originalState + m1 + m2 + ..., 求这个最短的序列{m1, m2, m3, ... }
      */
     public static LinkedList<Integer> IDSearch(int originalState, int targetState){
